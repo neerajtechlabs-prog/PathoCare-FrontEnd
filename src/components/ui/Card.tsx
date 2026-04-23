@@ -9,7 +9,7 @@ interface CardProps {
   extra?: ReactNode;
 }
 
-export default function Card({ children, className, title, subtitle, extra }: CardProps) {
+function Card({ children, className, title, subtitle, extra }: CardProps) {
   return (
     <div className={cn('bg-white border border-slate-200 rounded-xl shadow-sm transition-all hover:shadow-md', className)}>
       {(title || extra) && (
@@ -25,3 +25,6 @@ export default function Card({ children, className, title, subtitle, extra }: Ca
     </div>
   );
 }
+
+export { Card };
+export default Card;

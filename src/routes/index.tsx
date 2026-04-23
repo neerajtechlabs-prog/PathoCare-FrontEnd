@@ -11,6 +11,7 @@ import LoginPage from '../features/auth/LoginPage';
 import DashboardPage from '../pages/DashboardPage';
 import PatientPage from '../features/patients/PatientPage';
 import BookingForm from '../features/tests/BookingForm';
+import BookingPage from '../pages/BookingPage';
 
 interface ProtectedProps {
   children: React.ReactElement;
@@ -37,6 +38,8 @@ export default function AppRoutes() {
         <Route index element={<DashboardPage />} />
         <Route path="patients" element={<PatientPage />} />
         <Route path="tests" element={<BookingForm />} />
+        <Route path="bookings" element={<BookingPage />} />
+        <Route path="bookings/:id" element={<BookingPage />} />
         <Route path="reports" element={<div className="flex items-center justify-center h-full text-slate-400">Lab Reports Module (Coming Soon)</div>} />
         <Route path="billing" element={<div className="flex items-center justify-center h-full text-slate-400">Billing & Invoices Module (Coming Soon)</div>} />
       </Route>
