@@ -1,0 +1,6 @@
+{
+  "name": "PathoCare Pro",
+  "description": "A comprehensive cloud-based Pathology Lab Management System for managing patients, tests, reports, and billing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["Patient Management", "Lab Reports", "Billing & Invoices", "Doctor Dashboard"]
+}
