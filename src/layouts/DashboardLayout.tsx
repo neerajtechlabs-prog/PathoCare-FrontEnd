@@ -28,11 +28,12 @@ export default function DashboardLayout() {
   };
 
   const navItems = [
-    { label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: ROUTES.DASHBOARD },
-    { label: 'Patients', icon: <Users size={20} />, path: ROUTES.PATIENTS },
-    { label: 'Booking', icon: <FlaskConical size={20} />, path: ROUTES.TESTS },
-    { label: 'Reports', icon: <FileText size={20} />, path: ROUTES.REPORTS },
-    { label: 'Billing', icon: <CreditCard size={20} />, path: ROUTES.BILLING },
+    { label: 'Owner Summary', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
+    { label: 'Patients', icon: <Users size={20} />, path: '/dashboard/patients' },
+    { label: 'Booking', icon: <FlaskConical size={20} />, path: '/bookings' },
+    { label: 'Results', icon: <FileText size={20} />, path: '/dashboard/results' },
+    { label: 'Masters', icon: <FileText size={20} />, path: '/dashboard/masters' },
+    { label: 'Billing', icon: <CreditCard size={20} />, path: '/dashboard/billing/receipts' },
   ];
 
   return (

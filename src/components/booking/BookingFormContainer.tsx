@@ -17,6 +17,7 @@ import { ActionButtons } from './ActionButtons';
 import { bookingService } from '../../services/bookingService';
 import { Card } from '../ui/Card';
 import { FormTextArea } from '../form/FormInput';
+import { validateWithZod } from '../../utils/zodFormik';
 
 interface BookingFormProps {
   bookingId?: string;
@@ -208,7 +209,7 @@ export const BookingFormContainer: React.FC<BookingFormProps> = ({
         {/* Main Form */}
         <Formik
           initialValues={bookingData as BookingFormData}
-          validationSchema={bookingFormSchema}
+          validate={validateWithZod(bookingFormSchema)}
           onSubmit={handleSubmit}
           enableReinitialize
         >
