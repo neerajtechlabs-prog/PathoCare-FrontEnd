@@ -3,7 +3,6 @@ import { Plus, Edit2, Trash2, Eye, Search } from 'lucide-react';
 import Card from '../../../../components/ui/Card';
 import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
-import Table from '../../../../components/ui/Table';
 
 interface Doctor {
   id: string;
@@ -49,18 +48,21 @@ const mockDoctors: Doctor[] = [
   },
 ];
 
+type DoctorForm = Omit<Doctor, 'id'>;
+
 export default function DoctorMasterPage() {
   const [doctors, setDoctors] = useState<Doctor[]>(mockDoctors);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<Doctor>>({
+  const initialFormData: DoctorForm = {
     name: '',
     registrationNumber: '',
     specialization: '',
     phone: '',
     status: 'active',
-  });
+  };
+  const [formData, setFormData] = useState<DoctorForm>(initialFormData);
 
   const filteredDoctors = doctors.filter(
     (doc) =>
@@ -70,29 +72,22 @@ export default function DoctorMasterPage() {
 
   const handleAddNew = () => {
     setEditingId(null);
-    setFormData({ name: '', registrationNumber: '', specialization: '', phone: '', status: 'active' });
+    setFormData(initialFormData);
     setShowModal(true);
   };
 
   const handleEdit = (doctor: Doctor) => {
     setEditingId(doctor.id);
-    setFormData(doctor);
+    const { id, ...data } = doctor;
+    setFormData(data);
     setShowModal(true);
   };
 
   const handleSave = () => {
     if (editingId) {
-      setDoctors((prev) =>
-        prev.map((doc) => (doc.id === editingId ? { ...doc, ...formData } : doc))
-      );
+      setDoctors((prev) => prev.map((doc) => (doc.id === editingId ? { ...doc, ...formData } : doc)));
     } else {
-      setDoctors((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          ...formData,
-        } as Doctor,
-      ]);
+      setDoctors((prev) => [...prev, { id: Date.now().toString(), ...formData }]);
     }
     setShowModal(false);
   };

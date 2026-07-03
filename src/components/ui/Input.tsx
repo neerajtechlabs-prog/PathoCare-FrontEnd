@@ -1,23 +1,36 @@
-import { forwardRef, InputHTMLAttributes } from 'react';
-import { useField } from 'formik';
+import { forwardRef, InputHTMLAttributes, useContext } from 'react';
+import { useField, FormikContext, FieldInputProps, FieldMetaProps } from 'formik';
 import { cn } from '../../utils/cn';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
-  name: string;
+  name?: string;
   error?: string;
   helperText?: string;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, name, className, type = 'text', helperText, ...props }, ref) => {
-    const [field, meta] = useField(name);
+    const formikContext = useContext(FormikContext);
+
+    const [field, meta] = formikContext && name
+      ? useField(name)
+      : ([
+          {
+            name,
+            value: props.value,
+            onChange: props.onChange,
+            onBlur: props.onBlur,
+          } as FieldInputProps<any>,
+          { touched: false, error: undefined } as FieldMetaProps<any>,
+        ] as const);
+
     const hasError = !!(meta.touched && meta.error);
 
     return (
       <div className="w-full space-y-1.5">
         {label && (
-          <label htmlFor={name} className="block text-sm font-medium text-slate-700">
+          <label htmlFor={name ?? undefined} className="block text-sm font-medium text-slate-700">
             {label}
           </label>
         )}
