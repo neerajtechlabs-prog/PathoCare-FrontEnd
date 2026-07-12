@@ -1,24 +1,27 @@
 import { Formik, Form } from 'formik';
+import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { FlaskConical, Github, ArrowRight } from 'lucide-react';
-import { login } from './authSlice';
+import { FlaskConical, ArrowRight, AlertCircle, CheckCircle2, EyeOffIcon, EyeIcon } from 'lucide-react';
+import { fetchProfile, login } from './authSlice';
 import { AppDispatch, RootState } from '../../app/store';
-import { loginSchema } from '../../schemas/patientSchema';
-import { validateWithZod } from '../../utils/zodFormik';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import { ROUTES, APP_NAME } from '../../utils/constants';
+import { ROUTES } from '../../utils/constants';
 
 export default function LoginPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { error, loading } = useSelector((state: RootState) => state.auth);
+  const { error, loading, profileLoading } = useSelector((state: RootState) => state.auth);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (values: any) => {
     const result = await dispatch(login(values));
     if (login.fulfilled.match(result)) {
-      navigate(ROUTES.DASHBOARD);
+      const profileResult = await dispatch(fetchProfile());
+      if (fetchProfile.fulfilled.match(profileResult)) {
+        navigate(ROUTES.DASHBOARD);
+      }
     }
   };
 
@@ -26,8 +29,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sans">
       {/* Background purely for aesthetic */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-indigo-200/20 blur-[120px]"></div>
-        <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] rounded-full bg-emerald-200/20 blur-[120px]"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-200/20 blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-200/20 blur-[120px]"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-md">
@@ -42,13 +45,24 @@ export default function LoginPage() {
 
           <div className="px-10 pb-12">
             {error && (
-              <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium animate-pulse">
-                {error}
+              <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+                <AlertCircle size={18} className="mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-semibold">Login failed</p>
+                  <p className="mt-1 text-red-600">{error}</p>
+                </div>
+              </div>
+            )}
+
+            {profileLoading && (
+              <div className="mb-6 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700">
+                <CheckCircle2 size={18} className="shrink-0" />
+                <span>Signing you in and loading your profile…</span>
               </div>
             )}
 
             <Formik
-              initialValues={{ email: 'admin@pathocare.com', password: 'admin123' }}
+              initialValues={{ email: 'admin@demo.pathcare.local', password: 'Password123!' }}
               onSubmit={handleSubmit}
             >
               {({ isSubmitting }) => (
@@ -62,9 +76,11 @@ export default function LoginPage() {
                   <Input 
                     label="Password" 
                     name="password" 
-                    type="password" 
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••" 
                     className="h-12 border-slate-200 focus:ring-indigo-500"
+                    rightIcon={showPassword ? EyeIcon : EyeOffIcon}
+                    onRightIconClick={() => setShowPassword((prev) => !prev)}
                   />
 
                   <div className="flex items-center justify-between">
@@ -75,7 +91,7 @@ export default function LoginPage() {
                     <a href="#" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">Forgot password?</a>
                   </div>
 
-                  <Button type="submit" className="w-full h-12 text-base font-bold gap-2 bg-indigo-600 hover:bg-indigo-700" isLoading={isSubmitting || loading}>
+                  <Button type="submit" className="w-full h-12 text-base font-bold gap-2 bg-indigo-600 hover:bg-indigo-700" isLoading={isSubmitting || loading || profileLoading}>
                     Access Account
                     <ArrowRight size={18} />
                   </Button>

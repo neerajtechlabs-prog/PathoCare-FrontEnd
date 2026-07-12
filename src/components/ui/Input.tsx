@@ -1,5 +1,6 @@
 import { forwardRef, InputHTMLAttributes, useContext } from 'react';
 import { useField, FormikContext, FieldInputProps, FieldMetaProps } from 'formik';
+import { LucideIcon } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -7,10 +8,26 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   name?: string;
   error?: string;
   helperText?: string;
+  leftIcon?: LucideIcon;
+  rightIcon?: LucideIcon;
+  onRightIconClick?: () => void;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, name, className, type = 'text', helperText, ...props }, ref) => {
+  (
+    {
+      label,
+      name,
+      className,
+      type = 'text',
+      helperText,
+      leftIcon: LeftIcon,
+      rightIcon: RightIcon,
+      onRightIconClick,
+      ...props
+    },
+    ref
+  ) => {
     const formikContext = useContext(FormikContext);
 
     const [field, meta] = formikContext && name
@@ -34,18 +51,36 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             {label}
           </label>
         )}
-        <input
-          {...field}
-          {...props}
-          id={name}
-          type={type}
-          ref={ref}
-          className={cn(
-            'flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 transition-all',
-            hasError && 'border-red-500 focus:ring-red-500',
-            className
+        <div className="relative">
+          {LeftIcon && (
+            <LeftIcon
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"
+            />
           )}
-        />
+          <input
+            {...field}
+            {...props}
+            id={name}
+            type={type}
+            ref={ref}
+            className={cn(
+              'flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 transition-all',
+              LeftIcon && 'pl-9',
+              RightIcon && 'pr-9',
+              hasError && 'border-red-500 focus:ring-red-500',
+              className
+            )}
+          />
+          {RightIcon && (
+            <RightIcon
+              onClick={onRightIconClick}
+              className={cn(
+                'absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400',
+                onRightIconClick ? 'cursor-pointer hover:text-slate-600' : 'pointer-events-none'
+              )}
+            />
+          )}
+        </div>
         {hasError ? (
           <p className="text-xs text-red-500 font-medium">{meta.error}</p>
         ) : helperText ? (

@@ -93,7 +93,7 @@
 - ✅ Mock data in each master page
 
 #### Current Work
-- ⏳ **Owner Profile Page** — UI completed
+- ✅ **Owner Profile Page UI completed** — save flow currently mocked
   - ✅ All fields match screenshot:
     - CRNID, Lab Code, Firm Name
     - Owner's Name, Degree
@@ -103,40 +103,41 @@
   - ✅ Formik form integration
   - ✅ Basic validation
   - ✅ Save/Exit buttons
-  - ⏳ **NEXT:** Connect to API endpoints
+  - ✅ Mock save flow in place
+  - ⏳ **NEXT:** Connect to backend API endpoint
   - ⏳ **NEXT:** Add error handling
-  - ⏳ **NEXT:** Implement save functionality
+  - ⏳ **NEXT:** Implement real save/load functionality
 
 #### Pending
 - ⏳ Test Master CRUD (detailed form, test groups/parameters)
-- ⏳ Doctor Master CRUD (registration, specialization, bank details)
-- ⏳ Patient registration form
+- ✅ Doctor Master UI completed (backend save/list missing)
+- ✅ Patient registration form UI completed (backend integration pending)
 - ⏳ Integration with API for all masters
 
 ---
 
 ### WEEK 6 — Doctor Master + Patient Registration
-**Status:** 🔴 **PENDING** (starts after Owner Profile API integration)
+**Status:** 🔴 **IN PROGRESS** (UI completed, backend integration pending)
 
 #### Tasks
-- ⏳ Doctor Master CRUD forms
-- ⏳ Doctor form with fields: Name, Specialization, Phone, Email, Address, Bank Details
-- ⏳ Patient registration form
+- ✅ Doctor Master CRUD UI completed (save/list API missing)
+- ✅ Doctor form fields implemented: Name, Specialization, Phone, Email, Address, Bank Details
+- ✅ Patient registration form UI completed
 - ⏳ Auto-populate patient from existing records
 - ⏳ Connection to API endpoints
 
 ---
 
 ### WEEK 7 — Booking Form Part 1
-**Status:** 🔴 **PENDING** (highest complexity)
+**Status:** 🔴 **IN PROGRESS** (core UI created)
 
 #### Tasks
-- ⏳ Booking form component (most complex page)
-- ⏳ Test multi-selector with search
-- ⏳ Price auto-calculation
-- ⏳ Discount application
+- ✅ Booking form UI completed (backend/data integration pending)
+- ⏳ Test multi-selector with search (dropdowns still mocked)
+- ✅ Price auto-calculation skeleton present
+- ⏳ Discount application wiring
 - ⏳ F1 keyboard shortcut integration
-- ⏳ Form validation for all fields
+- ✅ Form validation skeleton present
 
 ---
 
@@ -147,7 +148,7 @@
 - ⏳ Booking list page with DataTable
 - ⏳ Date range filter
 - ⏳ Status filter (Registered, Collected, Reported)
-- ⏳ F3 Balance Receipt page
+- ✅ F3 Balance Receipt page UI exists
 - ⏳ Receipt print functionality
 - ⏳ Cancellation modal (admin only)
 
@@ -252,6 +253,13 @@
 - Protected routes
 - Keyboard shortcuts
 - Common components (Button, Card, Input)
+
+### Current Gaps
+- Frontend auth is currently mock-only in `src/features/auth/authSlice.ts`
+- `LoginPage` renders the login UI but does not yet call backend `/auth/login`
+- Owner Profile save is mocked, not wired to a real backend endpoint
+- Doctor Master and Patient registration UIs exist, but backend CRUD integration is pending
+- Booking dropdowns and search are still using mock lists instead of backend data
 
 ### In Development
 - Master pages UI

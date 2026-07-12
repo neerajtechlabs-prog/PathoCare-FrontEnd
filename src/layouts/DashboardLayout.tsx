@@ -19,7 +19,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { RootState } from '../app/store';
-import { logout } from '../features/auth/authSlice';
+import { logoutUser } from '../features/auth/authSlice';
 import { ROUTES, APP_NAME } from '../utils/constants';
 
 const navGroups = [
@@ -87,8 +87,8 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    await dispatch(logoutUser() as any);
     navigate(ROUTES.LOGIN);
   };
 

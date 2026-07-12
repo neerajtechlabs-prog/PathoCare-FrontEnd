@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import type { ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { RootState } from '../app/store';
 import { ROUTES } from '../utils/constants';
 
@@ -75,13 +75,26 @@ interface ProtectedProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedProps) => {
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-  return isAuthenticated ? children : <Navigate to={ROUTES.LOGIN} replace />;
+  const { isAuthenticated, token, bootstrapComplete } = useSelector((state: RootState) => state.auth);
+  const hasSession = Boolean(isAuthenticated || token);
+
+  if (!bootstrapComplete) {
+    return <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm font-medium text-slate-500">Checking your session…</div>;
+  }
+
+  return hasSession ? children : <Navigate to={ROUTES.LOGIN} replace />;
 };
 
 export default function AppRoutes() {
+  const [routeKey, setRouteKey] = useState(0);
+
+  useEffect(() => {
+    setRouteKey((prev) => prev + 1);
+  }, []);
+
   return (
-    <Routes>
+    <div key={routeKey} className="animate-[fadeIn_180ms_ease-out]">
+      <Routes>
       <Route path={ROUTES.LOGIN} element={<LoginRoutePage />} />
       <Route path="/verify/:code" element={<VerifyPage />} />
 
@@ -173,5 +186,6 @@ export default function AppRoutes() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </div>
   );
 }
