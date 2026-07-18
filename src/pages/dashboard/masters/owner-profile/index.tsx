@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Formik, Form } from 'formik';
 import { Save } from 'lucide-react';
 import Card from '../../../../components/ui/Card';
@@ -41,33 +41,93 @@ const validateForm = (values: OwnerProfile) => {
 
 export default function OwnerProfilePage() {
   const [saved, setSaved] = useState(false);
+  const [initialValuesState, setInitialValuesState] = useState<OwnerProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const initialValues: OwnerProfile = {
-    crnId: '469',
-    labCode: 'JPL',
-    firmName: 'JERATH PATH LAB & ALLERGY TESTING CENTRE',
-    ownerName: 'Dr Vikash',
-    degree: 'B.Sc. M.L.T',
-    address: '723/6 Jagrati Vihar Meerut Landmark - Mansadevmandir Road',
-    state: 'Uttar Pradesh',
-    city: 'Meerut',
+    crnId: '',
+    labCode: '',
+    firmName: '',
+    ownerName: '',
+    degree: '',
+    address: '',
+    state: '',
+    city: '',
     phone: '',
-    mobile: '8077805674',
+    mobile: '',
     fax: '',
-    operatingHours: '11TO 10',
+    operatingHours: '',
     web: '',
     tagLine: '',
   };
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const api = await import('../../../../lib/api/axios');
+        const resp = await api.default.get('/lab-profile');
+        const lab = resp as any;
+        if (lab) {
+          const cfg = lab.config || {};
+          setInitialValuesState({
+            crnId: cfg.crnId || '',
+            labCode: cfg.labCode || '',
+            firmName: lab.name || '',
+            ownerName: cfg.ownerName || '',
+            degree: cfg.degree || '',
+            address: lab.address || cfg.address || '',
+            state: cfg.state || '',
+            city: cfg.city || '',
+            phone: lab.phone || cfg.phone || '',
+            mobile: cfg.mobile || '',
+            fax: cfg.fax || '',
+            operatingHours: cfg.operatingHours || '',
+            web: cfg.web || '',
+            tagLine: cfg.tagLine || '',
+          });
+        } else {
+          setInitialValuesState(initialValues);
+        }
+      } catch (err) {
+        console.error('Failed to load lab profile', err);
+        setInitialValuesState(initialValues);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
   const handleSubmit = async (values: OwnerProfile) => {
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const api = await import('../../../../lib/api/axios');
+
+      const payload = {
+        name: values.firmName,
+        address: values.address,
+        phone: values.phone || values.mobile,
+        config: {
+          crnId: values.crnId,
+          labCode: values.labCode,
+          ownerName: values.ownerName,
+          degree: values.degree,
+          state: values.state,
+          city: values.city,
+          mobile: values.mobile,
+          fax: values.fax,
+          operatingHours: values.operatingHours,
+          web: values.web,
+          tagLine: values.tagLine,
+        },
+      };
+
+      await api.default.put('/lab-profile', payload);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-      console.log('Profile saved:', values);
     } catch (error) {
       console.error('Error saving profile:', error);
+      alert('Failed to save profile.');
     }
   };
 
@@ -85,9 +145,11 @@ export default function OwnerProfilePage() {
         </div>
       )}
 
-      <Formik initialValues={initialValues} validate={validateForm} onSubmit={handleSubmit}>
-        {({ isSubmitting }) => (
-          <Form className="space-y-6">
+      {loading && <div>Loading profile...</div>}
+      {!loading && initialValuesState && (
+        <Formik initialValues={initialValuesState} validate={validateForm} onSubmit={handleSubmit}>
+          {({ isSubmitting }) => (
+            <Form className="space-y-6">
             <Card title="Laboratory Information" subtitle="Core registration and identity details">
               <div className="grid gap-6 md:grid-cols-2">
                 <Input
@@ -200,6 +262,7 @@ export default function OwnerProfilePage() {
           </Form>
         )}
       </Formik>
+      )}
     </div>
   );
 }

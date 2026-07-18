@@ -63,11 +63,7 @@ api.interceptors.response.use(
       if (!isRefreshing) {
         isRefreshing = true;
         try {
-          const refreshToken = localStorage.getItem('refreshToken');
-          if (!refreshToken) {
-            throw new Error('No refresh token present');
-          }
-
+          // Call refresh endpoint — backend uses an httpOnly cookie for refresh token.
           const response = await api.post('/auth/refresh', {}, {
             headers: {
               'X-Tenant-Slug': getTenantSlug(),
@@ -79,8 +75,11 @@ api.interceptors.response.use(
 
           if (nextAccessToken) {
             localStorage.setItem('accessToken', nextAccessToken);
+            // If backend returns a refresh token in body, keep it optional (not required).
             if (nextRefreshToken) {
-              localStorage.setItem('refreshToken', nextRefreshToken);
+              try {
+                localStorage.setItem('refreshToken', nextRefreshToken);
+              } catch {}
             }
             flushRefreshQueue();
           } else {
@@ -89,7 +88,6 @@ api.interceptors.response.use(
         } catch (refreshError) {
           showUnauthorizedToast();
           localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
           localStorage.removeItem('user');
           window.location.href = '/login';
           throw refreshError;

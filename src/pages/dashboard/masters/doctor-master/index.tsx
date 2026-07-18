@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Edit2, Trash2, Eye, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Edit2, Eye, Plus, Search, Trash2 } from 'lucide-react';
 import Card from '../../../../components/ui/Card';
 import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
@@ -14,6 +14,8 @@ interface Doctor {
   rateCard?: string;
   notes?: string;
 }
+
+type DoctorForm = Omit<Doctor, 'id'>;
 
 const mockDoctors: Doctor[] = [
   {
@@ -48,62 +50,103 @@ const mockDoctors: Doctor[] = [
   },
 ];
 
-type DoctorForm = Omit<Doctor, 'id'>;
+const createEmptyDoctorForm = (): DoctorForm => ({
+  name: '',
+  registrationNumber: '',
+  specialization: '',
+  phone: '',
+  status: 'active',
+  rateCard: '',
+  notes: '',
+});
 
 export default function DoctorMasterPage() {
   const [doctors, setDoctors] = useState<Doctor[]>(mockDoctors);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const initialFormData: DoctorForm = {
-    name: '',
-    registrationNumber: '',
-    specialization: '',
-    phone: '',
-    status: 'active',
-  };
-  const [formData, setFormData] = useState<DoctorForm>(initialFormData);
+  const [formData, setFormData] = useState<DoctorForm>(createEmptyDoctorForm);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      try {
+        const resp: any = await (await import('../../../../services/doctorService')).doctorService.list();
+        if (mounted) {
+          setDoctors(Array.isArray(resp) ? resp : mockDoctors);
+        }
+      } catch (err) {
+        console.error('Failed to load doctors', err);
+      }
+    };
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const filteredDoctors = doctors.filter(
     (doc) =>
       doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.registrationNumber.includes(searchTerm)
+      doc.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddNew = () => {
     setEditingId(null);
-    setFormData(initialFormData);
+    setFormData(createEmptyDoctorForm());
     setShowModal(true);
   };
 
   const handleEdit = (doctor: Doctor) => {
     setEditingId(doctor.id);
     const { id, ...data } = doctor;
-    setFormData(data);
+    setFormData({ ...data, status: data.status ?? 'active' });
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (editingId) {
-      setDoctors((prev) => prev.map((doc) => (doc.id === editingId ? { ...doc, ...formData } : doc)));
-    } else {
-      setDoctors((prev) => [...prev, { id: Date.now().toString(), ...formData }]);
+  const handleSave = async () => {
+    try {
+      const service = (await import('../../../../services/doctorService')).doctorService;
+
+      if (editingId) {
+        const updated = await service.update(editingId, formData as any);
+        setDoctors((prev) => prev.map((doc) => (doc.id === editingId ? { ...doc, ...updated } : doc)));
+      } else {
+        const created = await service.create(formData as any);
+        setDoctors((prev) => [...prev, created]);
+      }
+
+      setShowModal(false);
+      setEditingId(null);
+      setFormData(createEmptyDoctorForm());
+    } catch (err) {
+      console.error('Failed to save doctor', err);
+      alert('Failed to save doctor');
     }
-    setShowModal(false);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this doctor?')) {
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this doctor?')) {
+      return;
+    }
+
+    try {
+      const service = (await import('../../../../services/doctorService')).doctorService;
+      await service.remove(id);
       setDoctors((prev) => prev.filter((doc) => doc.id !== id));
+    } catch (err) {
+      console.error('Failed to delete doctor', err);
+      alert('Failed to delete doctor');
     }
   };
 
   const columns = [
-    { key: 'name', label: 'Name' },
-    { key: 'registrationNumber', label: 'Registration #' },
+    { key: 'name', label: 'Doctor Name' },
+    { key: 'registrationNumber', label: 'Registration No.' },
     { key: 'specialization', label: 'Specialization' },
     { key: 'phone', label: 'Phone' },
-    { key: 'rateCard', label: 'Rate Card' },
     {
       key: 'status',
       label: 'Status',

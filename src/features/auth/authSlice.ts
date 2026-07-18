@@ -38,7 +38,6 @@ export const login = createAsyncThunk<LoginResponse, LoginPayload, { rejectValue
 
       const response = await authService.login(credentials);
       localStorage.setItem('accessToken', response.accessToken);
-      localStorage.setItem('refreshToken', response.refreshToken);
       return response;
     } catch (err: any) {
       return rejectWithValue(err.message || 'Login failed');
@@ -87,7 +86,6 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
       localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
     },
     setAuthUser: (state, action: PayloadAction<AuthUser | null>) => {
@@ -111,7 +109,7 @@ const authSlice = createSlice({
         state.token = action.payload.accessToken;
         state.isAuthenticated = true;
         localStorage.setItem('accessToken', action.payload.accessToken);
-        localStorage.setItem('refreshToken', action.payload.refreshToken);
+        // do not persist refresh token in localStorage; backend sets it in an httpOnly cookie
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
@@ -157,7 +155,7 @@ const authSlice = createSlice({
         state.token = null;
         state.isAuthenticated = false;
         localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        // ensure refresh cookie/session cleared by backend logout flow; remove any client-side access token
         localStorage.removeItem('user');
       });
   },
