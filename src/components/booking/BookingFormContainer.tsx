@@ -77,6 +77,41 @@ export const BookingFormContainer: React.FC<BookingFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [testOptions, setTestOptions] = useState<Array<{ value: string; label: string; rate: number; backendId?: string; code?: string }>>([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadTests = async () => {
+      try {
+        const response = await bookingService.getTests();
+        if (!mounted) return;
+
+        const options = Array.isArray(response)
+          ? response.map((item: any) => ({
+              value: item?.value || item?.code || item?.id,
+              label: item?.label || item?.name || item?.testName || item?.code || 'Unnamed Test',
+              rate: Number(item?.rate ?? 0),
+              backendId: item?.backendId || item?.id || item?.uuid || item?.testId,
+              code: item?.code || item?.value || item?.id,
+            }))
+          : [];
+
+        setTestOptions(options.length ? options : MOCK_TESTS.map((test) => ({ value: test.value, label: test.label, rate: test.rate })));
+      } catch (err) {
+        console.error('Failed to load test options', err);
+        if (mounted) {
+          setTestOptions(MOCK_TESTS.map((test) => ({ value: test.value, label: test.label, rate: test.rate })));
+        }
+      }
+    };
+
+    loadTests();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Fetch existing booking if in edit mode
   useEffect(() => {
@@ -168,12 +203,6 @@ export const BookingFormContainer: React.FC<BookingFormProps> = ({
       navigate('/');
     }
   };
-
-  const testOptions = MOCK_TESTS.map((test) => ({
-    value: test.value,
-    label: test.label,
-    rate: test.rate,
-  }));
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">

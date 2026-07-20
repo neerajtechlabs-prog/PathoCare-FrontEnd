@@ -1,4 +1,5 @@
-import { Formik, Form } from 'formik';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +9,7 @@ import { AppDispatch, RootState } from '../../app/store';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { ROUTES } from '../../utils/constants';
+import { loginSchema, type LoginFormValues } from '../../shared/validation';
 
 export default function LoginPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -15,7 +17,19 @@ export default function LoginPage() {
   const { error, loading, profileLoading } = useSelector((state: RootState) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = async (values: any) => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: 'admin@demo.pathcare.local',
+      password: 'Password123!',
+    },
+  });
+
+  const onSubmit = async (values: LoginFormValues) => {
     const result = await dispatch(login(values));
     if (login.fulfilled.match(result)) {
       const profileResult = await dispatch(fetchProfile());
@@ -61,43 +75,38 @@ export default function LoginPage() {
               </div>
             )}
 
-            <Formik
-              initialValues={{ email: 'admin@demo.pathcare.local', password: 'Password123!' }}
-              onSubmit={handleSubmit}
-            >
-              {({ isSubmitting }) => (
-                <Form className="space-y-5">
-                  <Input 
-                    label="Business Email" 
-                    name="email" 
-                    placeholder="name@pathocare.com" 
-                    className="h-12 border-slate-200 focus:ring-indigo-500"
-                  />
-                  <Input 
-                    label="Password" 
-                    name="password" 
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••" 
-                    className="h-12 border-slate-200 focus:ring-indigo-500"
-                    rightIcon={showPassword ? EyeIcon : EyeOffIcon}
-                    onRightIconClick={() => setShowPassword((prev) => !prev)}
-                  />
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <Input 
+                label="Business Email" 
+                placeholder="name@pathocare.com" 
+                className="h-12 border-slate-200 focus:ring-indigo-500"
+                {...register('email')}
+                error={errors.email?.message}
+              />
+              <Input 
+                label="Password" 
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••" 
+                className="h-12 border-slate-200 focus:ring-indigo-500"
+                rightIcon={showPassword ? EyeIcon : EyeOffIcon}
+                onRightIconClick={() => setShowPassword((prev) => !prev)}
+                {...register('password')}
+                error={errors.password?.message}
+              />
 
-                  <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                      <span className="text-sm text-slate-500 group-hover:text-slate-700 transition-colors font-medium">Remember me</span>
-                    </label>
-                    <a href="#" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">Forgot password?</a>
-                  </div>
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                  <span className="text-sm text-slate-500 group-hover:text-slate-700 transition-colors font-medium">Remember me</span>
+                </label>
+                <a href="#" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">Forgot password?</a>
+              </div>
 
-                  <Button type="submit" className="w-full h-12 text-base font-bold gap-2 bg-indigo-600 hover:bg-indigo-700" isLoading={isSubmitting || loading || profileLoading}>
-                    Access Account
-                    <ArrowRight size={18} />
-                  </Button>
-                </Form>
-              )}
-            </Formik>
+              <Button type="submit" className="w-full h-12 text-base font-bold gap-2 bg-indigo-600 hover:bg-indigo-700" isLoading={isSubmitting || loading || profileLoading}>
+                Access Account
+                <ArrowRight size={18} />
+              </Button>
+            </form>
 
             <div className="mt-8 pt-8 border-t border-slate-100 text-center">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Enterprise Pathology Network v2.0</p>

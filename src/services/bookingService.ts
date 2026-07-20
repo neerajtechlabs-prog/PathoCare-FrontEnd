@@ -1,33 +1,64 @@
-import axios, { AxiosInstance } from 'axios';
+import api from '../lib/api/axios';
 import { BookingFormData } from '../features/bookings/bookingSlice';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+export interface BookingCreatePayload {
+  patientId: string;
+  doctorId?: string;
+  testIds?: string[];
+  preferredDate?: string;
+  notes?: string;
+  email?: string;
+  phone?: string;
+  paymentMode?: string;
+  amount?: number;
+}
+
+const normalizePaymentMode = (payType?: string) => {
+  const normalized = (payType || '').toLowerCase();
+
+  switch (normalized) {
+    case 'cash':
+      return 'CASH';
+    case 'card':
+    case 'debit/credit card':
+      return 'CARD';
+    case 'upi':
+      return 'UPI';
+    case 'cheque':
+      return 'CHEQUE';
+    case 'online':
+    case 'online transfer':
+      return 'ONLINE';
+    default:
+      return (payType || '').toUpperCase();
+  }
+};
+
+const normalizeGender = (sex?: string) => {
+  const normalized = (sex || '').toLowerCase();
+  if (normalized.includes('female')) return 'Female';
+  if (normalized.includes('male')) return 'Male';
+  return 'Other';
+};
+
+export const buildBookingCreatePayload = (bookingData: BookingFormData): BookingCreatePayload => ({
+  patientId: '',
+  testIds: bookingData.tests
+    .map((test) => test.backendId || test.id)
+    .filter(Boolean) as string[],
+  preferredDate: bookingData.date || undefined,
+  notes: bookingData.cancelRemark || undefined,
+  email: bookingData.email || undefined,
+  phone: bookingData.mobile || undefined,
+  paymentMode: normalizePaymentMode(bookingData.payType),
+  amount: Number(bookingData.net || bookingData.total || bookingData.amount || 0),
+});
 
 class BookingService {
-  private api: AxiosInstance;
-
-  constructor() {
-    this.api = axios.create({
-      baseURL: API_BASE_URL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    // Add token to requests if available
-    this.api.interceptors.request.use((config) => {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
-  }
-
   // Fetch dropdown data
   async getCentres() {
     try {
-      const response = await this.api.get('/bookings/centres');
+      const response = await api.get('/bookings/centres');
       return response.data;
     } catch (error) {
       console.error('Error fetching centres:', error);
@@ -37,7 +68,7 @@ class BookingService {
 
   async getDoctors() {
     try {
-      const response = await this.api.get('/bookings/doctors');
+      const response = await api.get('/bookings/doctors');
       return response.data;
     } catch (error) {
       console.error('Error fetching doctors:', error);
@@ -47,8 +78,21 @@ class BookingService {
 
   async getTests() {
     try {
-      const response = await this.api.get('/bookings/tests');
-      return response.data;
+      const response = await api.get('/tests');
+      const payload = response.data as unknown;
+      const items = Array.isArray(payload)
+        ? payload
+        : Array.isArray((payload as { items?: unknown[] })?.items)
+          ? (payload as { items: unknown[] }).items
+          : [];
+
+      return items.map((item: any) => ({
+        value: item?.code || item?.name || item?.testName || item?.id,
+        label: item?.name || item?.testName || item?.code || 'Unnamed Test',
+        rate: Number(item?.rate ?? item?.price ?? 0),
+        backendId: item?.id ?? item?.uuid ?? item?.testId,
+        code: item?.code || item?.name || item?.testName || item?.id,
+      }));
     } catch (error) {
       console.error('Error fetching tests:', error);
       return [];
@@ -57,7 +101,7 @@ class BookingService {
 
   async getSampleTypes() {
     try {
-      const response = await this.api.get('/bookings/sample-types');
+      const response = await api.get('/bookings/sample-types');
       return response.data;
     } catch (error) {
       console.error('Error fetching sample types:', error);
@@ -67,7 +111,7 @@ class BookingService {
 
   async getPanels() {
     try {
-      const response = await this.api.get('/bookings/panels');
+      const response = await api.get('/bookings/panels');
       return response.data;
     } catch (error) {
       console.error('Error fetching panels:', error);
@@ -75,10 +119,36 @@ class BookingService {
     }
   }
 
-  // Booking operations
+  async createPatient(bookingData: BookingFormData) {
+    try {
+      const response = await api.post('/patients', {
+        name: bookingData.patientName?.trim() || 'Unknown Patient',
+        phone: bookingData.mobile?.trim() || undefined,
+        email: bookingData.email?.trim() || undefined,
+        gender: normalizeGender(bookingData.sex),
+        address: bookingData.area?.trim() || undefined,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating patient:', error);
+      throw error;
+    }
+  }
+
   async createBooking(bookingData: BookingFormData) {
     try {
-      const response = await this.api.post('/bookings', bookingData);
+      const patient = await this.createPatient(bookingData);
+      const patientId = patient?.id || patient?.patientId || '';
+      if (!patientId) {
+        throw new Error('Unable to create or resolve a patient for this booking.');
+      }
+
+      const payload = {
+        ...buildBookingCreatePayload(bookingData),
+        patientId,
+      };
+
+      const response = await api.post('/bookings', payload);
       return response.data;
     } catch (error) {
       console.error('Error creating booking:', error);
@@ -88,7 +158,7 @@ class BookingService {
 
   async updateBooking(bookingId: string, bookingData: Partial<BookingFormData>) {
     try {
-      const response = await this.api.put(`/bookings/${bookingId}`, bookingData);
+      const response = await api.put(`/bookings/${bookingId}`, bookingData);
       return response.data;
     } catch (error) {
       console.error('Error updating booking:', error);
@@ -98,7 +168,7 @@ class BookingService {
 
   async getBooking(bookingId: string) {
     try {
-      const response = await this.api.get(`/bookings/${bookingId}`);
+      const response = await api.get(`/bookings/${bookingId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching booking:', error);
@@ -108,7 +178,7 @@ class BookingService {
 
   async deleteBooking(bookingId: string) {
     try {
-      const response = await this.api.delete(`/bookings/${bookingId}`);
+      const response = await api.delete(`/bookings/${bookingId}`);
       return response.data;
     } catch (error) {
       console.error('Error deleting booking:', error);
@@ -118,7 +188,7 @@ class BookingService {
 
   async searchBookings(query: string) {
     try {
-      const response = await this.api.get('/bookings/search', {
+      const response = await api.get('/bookings/search', {
         params: { q: query },
       });
       return response.data;
@@ -130,7 +200,7 @@ class BookingService {
 
   async printBooking(bookingId: string) {
     try {
-      const response = await this.api.get(`/bookings/${bookingId}/print`, {
+      const response = await api.get(`/bookings/${bookingId}/print`, {
         responseType: 'blob',
       });
       return response.data;
@@ -142,7 +212,7 @@ class BookingService {
 
   async generateBookingReport(bookingData: BookingFormData) {
     try {
-      const response = await this.api.post('/bookings/report', bookingData, {
+      const response = await api.post('/bookings/report', bookingData, {
         responseType: 'blob',
       });
       return response.data;

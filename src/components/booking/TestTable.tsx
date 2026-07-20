@@ -7,7 +7,7 @@ import { Button } from '../ui/Button';
 
 interface TestTableProps {
   formik: FormikProps<BookingFormData>;
-  tests: Array<{ value: string; label: string; rate: number }>;
+  tests: Array<{ value: string; label: string; rate: number; backendId?: string; code?: string }>;
 }
 
 export const TestTable: React.FC<TestTableProps> = ({ formik, tests }) => {
@@ -39,8 +39,9 @@ export const TestTable: React.FC<TestTableProps> = ({ formik, tests }) => {
         const updatedTests = [...values.tests];
         updatedTests[index] = {
           ...updatedTests[index],
-          test: testValue,
-          code: selectedTest.value,
+          backendId: selectedTest.backendId,
+          test: selectedTest.label,
+          code: selectedTest.code || selectedTest.value,
           rate: selectedTest.rate,
         };
         setFieldValue('tests', updatedTests);
