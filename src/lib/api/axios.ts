@@ -7,10 +7,20 @@ const api = axios.create({
 });
 
 let isRefreshing = false;
-let refreshQueue: Array<() => void> = [];
+let refreshQueue: Array<{
+  resolve: (value: unknown) => void;
+  reject: (reason?: unknown) => void;
+  originalRequest: InternalAxiosRequestConfig;
+}> = [];
 
-const flushRefreshQueue = () => {
-  refreshQueue.forEach((resolve) => resolve());
+const flushRefreshQueue = (error?: unknown) => {
+  refreshQueue.forEach(({ resolve, reject, originalRequest }) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve(api(originalRequest));
+    }
+  });
   refreshQueue = [];
 };
 
@@ -56,52 +66,63 @@ api.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+  const authPath = originalRequest.url ? String(originalRequest.url) : '';
+  const isAuthEndpoint = authPath.includes('/auth/login') || authPath.includes('/auth/refresh');
+  const shouldAttemptRefresh =
+    error.response?.status === 401 &&
+    !originalRequest._retry &&
+    !isAuthEndpoint;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+  if (shouldAttemptRefresh) {
+    originalRequest._retry = true;
 
-      if (!isRefreshing) {
-        isRefreshing = true;
-        try {
-          // Call refresh endpoint — backend uses an httpOnly cookie for refresh token.
-          const response = await api.post('/auth/refresh', {}, {
+    if (!isRefreshing) {
+      isRefreshing = true;
+      try {
+        const response = await api.post(
+          '/auth/refresh',
+          {},
+          {
             headers: {
               'X-Tenant-Slug': getTenantSlug(),
             },
-          });
+          },
+        );
 
-          const nextAccessToken = response.data?.accessToken;
-          const nextRefreshToken = response.data?.refreshToken;
+        const nextAccessToken = response.data?.accessToken;
+        const nextRefreshToken = response.data?.refreshToken;
 
-          if (nextAccessToken) {
-            localStorage.setItem('accessToken', nextAccessToken);
-            // If backend returns a refresh token in body, keep it optional (not required).
-            if (nextRefreshToken) {
-              try {
-                localStorage.setItem('refreshToken', nextRefreshToken);
-              } catch {}
-            }
-            flushRefreshQueue();
-          } else {
-            throw new Error('Refresh response missing access token');
+        if (nextAccessToken) {
+          localStorage.setItem('accessToken', nextAccessToken);
+          if (nextRefreshToken) {
+            try {
+              localStorage.setItem('refreshToken', nextRefreshToken);
+            } catch {}
           }
-        } catch (refreshError) {
-          showUnauthorizedToast();
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
-          throw refreshError;
-        } finally {
-          isRefreshing = false;
+          flushRefreshQueue();
+        } else {
+          throw new Error('Refresh response missing access token');
         }
+      } catch (refreshError) {
+        showUnauthorizedToast();
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+        flushRefreshQueue(refreshError);
+        window.location.href = '/login';
+        throw refreshError;
+      } finally {
+        isRefreshing = false;
       }
-
-      return new Promise((resolve, reject) => {
-        refreshQueue.push(() => {
-          resolve(api(originalRequest));
-        });
-      });
     }
+
+    return new Promise((resolve, reject) => {
+      refreshQueue.push({
+        resolve,
+        reject,
+        originalRequest,
+      });
+    });
+  }
 
     return Promise.reject(error);
   }

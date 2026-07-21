@@ -2,6 +2,7 @@ export const APP_NAME = 'PathoCare Pro';
 
 export const ROUTES = {
   LOGIN: '/login',
+  SIGNUP: '/signup',
   DASHBOARD: '/',
   PATIENTS: '/patients',
   PATIENT_ADD: '/patients/add',

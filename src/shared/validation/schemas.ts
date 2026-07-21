@@ -5,6 +5,30 @@ export const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
+export const signupSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  username: z.string().min(3, 'Username must be at least 3 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string().min(8, 'Please confirm your password'),
+  tenantName: z.string().min(2, 'Lab or clinic name is required'),
+  registrationNumber: z.string().optional(),
+  gstNumber: z.string().optional(),
+  mobileNumber: z.string().regex(/^[0-9]{10}$/, 'Mobile number must be 10 digits'),
+  designation: z.string().optional(),
+  country: z.string().optional(),
+  state: z.string().optional(),
+  city: z.string().optional(),
+  pinCode: z.string().optional(),
+  completeAddress: z.string().optional(),
+  plan: z.string().optional(),
+  terms: z.boolean().refine((value) => value, 'You must accept the terms and conditions'),
+  privacy: z.boolean().refine((value) => value, 'You must accept the privacy policy'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
+});
+
 export const patientSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   age: z.coerce.number().min(0).max(120),
@@ -68,5 +92,6 @@ export const bookingFormSchema = z.object({
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
+export type SignupFormValues = z.infer<typeof signupSchema>;
 export type PatientFormValues = z.infer<typeof patientSchema>;
 export type BookingFormValues = z.infer<typeof bookingFormSchema>;

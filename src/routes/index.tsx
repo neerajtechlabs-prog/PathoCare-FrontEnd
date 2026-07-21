@@ -9,6 +9,7 @@ import DashboardLayout from '../layouts/DashboardLayout';
 
 // Pages
 import LoginRoutePage from '../pages/login';
+import SignupRoutePage from '../pages/signup';
 import DashboardRoutePage from '../pages/dashboard';
 import BookingListPage from '../pages/dashboard/booking';
 import NewBookingPage from '../pages/dashboard/booking/new';
@@ -96,6 +97,7 @@ export default function AppRoutes() {
     <div key={routeKey} className="animate-[fadeIn_180ms_ease-out]">
       <Routes>
       <Route path={ROUTES.LOGIN} element={<LoginRoutePage />} />
+      <Route path={ROUTES.SIGNUP} element={<SignupRoutePage />} />
       <Route path="/verify/:code" element={<VerifyPage />} />
 
       <Route

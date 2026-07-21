@@ -6,6 +6,29 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface SignupPayload {
+  name: string;
+  email: string;
+  password: string;
+  tenantName?: string;
+  labName?: string;
+  labCode?: string;
+  registrationNumber?: string;
+  gstNumber?: string;
+  mobileNumber?: string;
+  designation?: string;
+  username?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  pinCode?: string;
+  completeAddress?: string;
+  plan?: string;
+  terms?: boolean;
+  privacy?: boolean;
+  tenantSlug?: string;
+}
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -23,6 +46,12 @@ export interface LoginResponse {
 
 export interface ProfileResponse extends AuthUser {}
 
+export interface SignupResponse {
+  message: string;
+  user: AuthUser;
+  password?: string;
+}
+
 function extractErrorMessage(error: unknown): string {
   if (typeof error === 'string') return error;
   if (error && typeof error === 'object') {
@@ -37,6 +66,19 @@ export const authService = {
   async login(payload: LoginPayload): Promise<LoginResponse> {
     try {
       const response = await api.post<LoginResponse>('/auth/login', payload, {
+        headers: {
+          'X-Tenant-Slug': getTenantSlug(),
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(extractErrorMessage(error));
+    }
+  },
+
+  async signup(payload: SignupPayload): Promise<SignupResponse> {
+    try {
+      const response = await api.post<SignupResponse>('/auth/signup', payload, {
         headers: {
           'X-Tenant-Slug': getTenantSlug(),
         },

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { authService, AuthUser, LoginPayload, LoginResponse } from './authService';
+import { authService, AuthUser, LoginPayload, LoginResponse, SignupPayload, SignupResponse } from './authService';
 
 interface BootstrapState {
   checked: boolean;
@@ -41,6 +41,21 @@ export const login = createAsyncThunk<LoginResponse, LoginPayload, { rejectValue
       return response;
     } catch (err: any) {
       return rejectWithValue(err.message || 'Login failed');
+    }
+  }
+);
+
+export const signup = createAsyncThunk<SignupResponse, SignupPayload, { rejectValue: string }>(
+  'auth/signup',
+  async (payload, { rejectWithValue }) => {
+    try {
+      if (!payload.name || !payload.email || !payload.password) {
+        throw new Error('Please provide your name, email, and password');
+      }
+
+      return await authService.signup(payload);
+    } catch (err: any) {
+      return rejectWithValue(err.message || 'Signup failed');
     }
   }
 );
@@ -114,6 +129,18 @@ const authSlice = createSlice({
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload ?? 'Login failed';
+      })
+      .addCase(signup.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(signup.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(signup.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload ?? 'Signup failed';
       })
       .addCase(fetchProfile.pending, (state) => {
         state.profileLoading = true;

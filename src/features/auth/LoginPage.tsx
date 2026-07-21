@@ -108,6 +108,15 @@ export default function LoginPage() {
               </Button>
             </form>
 
+            <div className="mt-6 text-center">
+              <p className="text-sm text-slate-500">
+                New here?{' '}
+                <button type="button" onClick={() => navigate(ROUTES.SIGNUP)} className="font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+                  Create an account
+                </button>
+              </p>
+            </div>
+
             <div className="mt-8 pt-8 border-t border-slate-100 text-center">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Enterprise Pathology Network v2.0</p>
             </div>
